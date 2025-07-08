@@ -1,0 +1,482 @@
+.img_vaucher{
+  width: 380px;
+  height: 400px;
+  }
+  .redondear{
+      border-radius: 8px;
+  }
+  .caption{
+      line-height: 9px;
+  }
+  .font-size-12 {
+
+  font-size: 12px;
+  }
+  .line-height {
+  line-height: normal;
+  }
+  .img-nuev{
+   width: 2.5rem;
+  }
+  .iq-waves-effect {
+  position: relative;
+  overflow: hidden;
+  }
+  .navbar-list {
+  font-size: 18px;
+  /*padding: 0 15px;*/
+      padding-right: 15px;
+  line-height: 73px;
+  color: var(--iq-primary);
+  display: block;
+  /*min-height: 65px;*/
+  }
+  
+  .VueTables__table tbody {}
+
+  
+
+  .VueTables__search-field {
+      display: flex !important;
+  }
+
+  .VueTables__limit-field {
+      display: flex !important;
+  }
+
+  .VueTables__limit {
+      display: inline !important;
+      float: right;
+  }
+
+  .VuePagination {
+      justify-content: center;
+  }
+  .vs__dropdown-toggle{
+      margin-top: 0 !important;
+  }
+  /*tr td {
+      padding-bottom: 8px !important;
+      padding-top: 8px !important;
+  }
+  .table td {
+      vertical-align: middle;
+  }*/
+  .certificacion tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .tableuser tr td{
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .techoacti tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .tableingre tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+}
+  input[type=checkbox] {
+      transform: scale(2);
+  }
+  .fechas {
+      padding-top: 0.5rem;
+  }
+
+  .table-hover tbody tr:hover {
+      background-color: rgb(191, 255, 200);
+  }
+
+  .card-title {
+      font-size: 1.5rem;
+  }
+
+  .asig {
+      border: 1px solid rgba(0, 134, 0, 0.616);
+      border-radius: 10px;
+  }
+  .asig tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .spiner {
+      position: fixed;
+      z-index: 25000;
+      background: rgba(0, 0, 0, 0.623);
+      left: 0px;
+      top: 0px;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .3s ease;
+  }
+
+  @media (min-width: 1200px) {
+      .modal-xl {
+          max-width: 1450px;
+      }
+  }
+
+
+  /* th {
+      text-align: center;
+  } */
+  .techofte tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .techogas tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .techoingre tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .techoprod tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+  }
+
+  input[type=number] {
+      -moz-appearance: textfield;
+  }
+  .techodiv tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .tabledoc tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .techofun tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .techometa tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .tablaofic tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  /*tr td {
+      padding-bottom: 8px !important;
+      padding-top: 8px !important;
+  
+  .table td {
+      vertical-align: middle;
+  }}*/
+  .techopres tr td {
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .tabletipo tr td{
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .tableunim tr td{
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .tableuniorg tr td{
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .tableprod tr td{
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .tableprod tr td:nth-child(8) {
+      width: 10%;
+  }
+  .tableserv tr td{
+      padding-bottom: 1px !important;
+      padding-top: 1px !important;
+      vertical-align: middle;
+  }
+  .ejec {
+      border: 1px solid rgba(0, 134, 0, 0.616);
+      border-radius: 10px;
+  }
+  input[type=checkbox] {
+      transform: scale(2);
+  }
+  
+  .general {
+      counter-reset: section;
+  }
+
+  .table {
+      width: 100%;
+      border-collapse: collapse;
+      padding: 0;
+      margin: 0;
+      font-size: 12px;
+  }
+/*
+  tr .table th {
+      text-align: center;
+  }
+*/
+  .titulo {
+      border: 2px solid;
+  }
+
+  .tr td {
+      border-top: 0px;
+      border-right: 0px;
+      border-bottom: 0px;
+      border-left: 0px;
+      padding-bottom: 1px;
+      padding-top: 1px;
+  }
+
+  .row span {
+      font-size: 14px;
+  }
+
+  .row small {
+      font-size: 10px;
+  }
+
+  .table thead th {
+      border-bottom: 0;
+  }
+
+  .cabezera {
+      padding-bottom: 0;
+      border: 0;
+  }
+
+  .cuerpo {
+      padding-top: 0.3em;
+  }
+
+  .cuadro {
+      padding-top: 0;
+      padding-bottom: 0;
+      margin-top: 0;
+      margin-bottom: 0;
+      border-top: 0;
+      border-bottom: 0;
+  }
+
+  .ofic {
+      font-size: 12px;
+      border-top: 0;
+      border-bottom: 0;
+      padding-bottom: 0.5em;
+      padding-top: 0.2em;
+  }
+
+  .bordere {
+      border-right: 2px solid;
+  }
+
+  h5 {
+      font-size: 15px;
+      font-weight: bolder;
+  }
+
+  .nivel1 {
+      font-size: 17px;
+      font-weight: bolder;
+  }
+
+  .nivel2 {
+      font-size: 17px;
+      font-weight: bolder;
+  }
+
+  .nivel3 {
+      font-size: 14px;
+      font-weight: bolder;
+  }
+  .tableuser tr td:nth-child(8) {
+      width: 7%;
+  }
+  .pagos tr td:nth-child(2) {
+      text-align: left !important;
+  }
+  .tableprovee tr td {
+      padding-bottom: 0px !important;
+      padding-top: 0px !important;
+      vertical-align: middle;
+  }
+  .tabla-propbien tr {
+      td:nth-child(4),td:nth-child(5),td:nth-child(6),td:nth-child(7){
+          text-align: right !important;
+      }
+  }
+  .card-tools {
+      margin-top: 0 !important;
+  }
+  .card-title{
+      margin-top: 2px;
+      font-size: 1.3rem !important;
+  }
+
+  .w-80{
+   width: 80% !important;
+  }
+  .w-95{
+   width: 95% !important;
+  }
+  //nuevoooo
+.quick-actions {
+width:350px;
+padding:0
+}
+.quick-actions:after {
+border-bottom-color:#1572e8!important
+}
+.quick-actions .quick-actions-header {
+display:flex;
+align-items:center;
+flex-direction:column;
+background:#1572e8;
+color:#fff;
+padding:5px;
+border-radius:3px 3px 0 0
+}
+.quick-actions .quick-actions-header .title {
+font-size:18px
+}
+.quick-actions .quick-actions-header .subtitle {
+font-size:13px
+}
+.quick-actions .quick-actions-items {
+padding:15px 7.5px
+}
+.quick-actions a:hover {
+text-decoration:none
+}
+.quick-actions .quick-actions-item {
+display:flex;
+flex-direction:column;
+margin:7.5px 7.5px;
+padding:10px;
+align-items:center;
+color:#1572e8;
+border: 1px solid #868181;
+border-bottom: 1px solid #9e9e9e;
+border-radius:3px;
+transition:all .2s;
+}
+.quick-actions .quick-actions-item:hover {
+background:#fdfdff;
+color:#1572e8;
+box-shadow:3px 3px 10px #f7f1f1
+}
+.quick-actions .quick-actions-item i {
+color:#7d8c95;
+font-size:27px
+}
+.quick-actions .quick-actions-item .text {
+text-align:center;
+font-size:13px;
+margin-top:8px
+}
+.quick-actions.quick-actions-default:after {
+border-bottom-color:#1a2035!important
+}
+.quick-actions.quick-actions-default .quick-actions-header {
+background:#1a2035
+}
+.quick-actions.quick-actions-default .quick-actions-item {
+color:#1a2035
+}
+.quick-actions.quick-actions-primary:after {
+border-bottom-color:#1572e8!important
+}
+.quick-actions.quick-actions-primary .quick-actions-header {
+background:#1572e8
+}
+.quick-actions.quick-actions-primary .quick-actions-item {
+color:#1572e8
+}
+.quick-actions.quick-actions-secondary:after {
+border-bottom-color:#6861ce!important
+}
+.quick-actions.quick-actions-secondary .quick-actions-header {
+background:#6861ce
+}
+.quick-actions.quick-actions-secondary .quick-actions-item {
+color:#6861ce
+}
+.quick-actions.quick-actions-info:after {
+border-bottom-color:#48abf7!important
+}
+.quick-actions.quick-actions-info .quick-actions-header {
+background:#48abf7
+}
+.quick-actions.quick-actions-info .quick-actions-item {
+color:#48abf7
+}
+.quick-actions.quick-actions-warning:after {
+border-bottom-color:#ffad46!important
+}
+.quick-actions.quick-actions-warning .quick-actions-header {
+background:#ffad46
+}
+.quick-actions.quick-actions-warning .quick-actions-item {
+color:#ffad46
+}
+.quick-actions.quick-actions-success:after {
+border-bottom-color:#31ce36!important
+}
+.quick-actions.quick-actions-success .quick-actions-header {
+background:#31ce36
+}
+.quick-actions.quick-actions-success .quick-actions-item {
+color:#31ce36
+}
+.quick-actions.quick-actions-danger:after {
+border-bottom-color:#f25961!important
+}
+.quick-actions.quick-actions-danger .quick-actions-header {
+background:#f25961
+}
+.quick-actions.quick-actions-danger .quick-actions-item {
+color:#f25961
+}
+.el-date-editor.el-input,
+.el-input,
+.el-input-number,
+.el-select {
+width: 100% !important;
+}
+.VueTables__row td{
+    vertical-align: middle;
+  }

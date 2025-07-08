@@ -1,0 +1,59 @@
+
+.general {
+    counter-reset: section;
+}
+  @media print {
+    h4 {
+        font-size: 10px;
+        position: absolute;
+        font-weight: normal;
+        page-break-before: always;
+        page-break-after: always;
+        top: 0;
+        right: 0;
+    }
+
+    h4::before {
+    font-size: 12px;
+    font-weight: normal;
+    position: relative;
+    top: 130px;
+    left: -10px;
+    counter-increment: section;
+    content: "Pagina: "counter(section);
+    }
+
+    .print {
+    display: none;
+    }
+}
+
+
+@page {
+    size: A4 portrait;
+    padding: 0.10mm;
+}
+
+.general {
+    justify-content: center !important;
+}
+
+p {
+    text-align: justify !important;
+}
+
+
+
+
+
+/* @page {
+    size: A4 portrait;
+    padding: 0.10mm;
+} */
+
+/* @page:before {
+    content: counter(page);
+    @bottom-center {
+        margin-bottom: 5em;
+    }
+} */
