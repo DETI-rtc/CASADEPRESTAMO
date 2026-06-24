@@ -3,6 +3,7 @@
 /public/storage
 /storage/*.key
 /vendor
+public/docs/ticket/*.pdf
 .env
 .env.backup
 .phpunit.result.cache

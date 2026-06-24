@@ -36,7 +36,7 @@
             <div class="card-body" ref="contento">
 
               <div class="text-center">
-                <h3>RESUMEN DE RETORNO DE CAPITAL <template v-if="mes"> {{mes.label | upText}} </template> DEL {{ anio }}</h3>
+                <h3>RESUMEN DE RETORNO DE CAPITAL <template v-if="mes"> {{mes.label | upText}} </template> AL {{ anio }}</h3>
               </div>
               <table class="table table-bordered">
                 <thead>
@@ -44,11 +44,12 @@
                     <th>N°</th>
                     <th>Mes</th> 
                     <th>Desembolso</th>                   
-                    <th>Acumulado</th>
-                    <th>Cancelacion</th>
-                    <th>Cap. Amortizado</th>
-                    <th>Total Amortizado</th>
-                    <th>Saldo Cap. Adeudo</th>
+                    <th>Desembolso Acumulado</th>
+                    <th>Capital x Cancelacion</th>
+                    <th>Cap. Amortizado x cuota</th>
+                    <th>Total Capital</th>
+                    <th>Capital Recuperado</th>
+                    <th>Capital por Recuperar</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -60,6 +61,7 @@
                      <td class="text-right">{{i.cancelado | localperu}} </td>
                     <td class="text-right"> {{ i.amorti | localperu}} </td>
                     <td class="text-right"> {{i.total | localperu}} </td>
+                    <td class="text-right"> {{i.acumulado1 | localperu}} </td>
                     <td class="text-right"> {{i.deuda | localperu}} </td>
                    
                   </tr>
@@ -67,22 +69,35 @@
                 <tfoot v-if="data.length > 0">
                   <tr>
                     <td colspan="2" class="text-center">TOTAL - {{ anio }} :</td>
-                    <td class="text-right">{{tdesem}}</td>
-                    <td class="text-right">{{tacumo}}</td>
+                    <td class="text-right"></td>
+                    <td class="text-right"></td>
                     <td class="text-right">{{tcancelado}}</td>
                     <td class="text-right">{{tamorti}}</td>
                     <td class="text-right">{{ttotal}}</td>
-                    <td class="text-right">{{tdeuda}}</td>
+                    <td class="text-right"></td>
+                    <td class="text-right"></td>
                   
+                  </tr>
+                  <tr>
+                    <td colspan="2" class="text-center">TOTAL AÑOS ANTERIORES :</td>
+                    <td class="text-right"></td>
+                    <td class="text-right"></td>
+                    <td class="text-right">{{ttcancelado}}</td>
+                    <td class="text-right">{{ttamorti}}</td>
+                    <td class="text-right">{{tttotal}}</td>
+                    <td class="text-right"></td>
+                    <td class="text-right"></td>
+                    
                   </tr>
                   <tr>
                     <td colspan="2" class="text-center">TOTAL - General :</td>
                     <td class="text-right"></td>
-                    <td class="text-right">{{ttacomu}}</td>
+                    <td class="text-right"></td>
+                    <td class="text-right">{{gcancelado}}</td>
+                    <td class="text-right">{{gamorti}}</td>
+                    <td class="text-right">{{gtotal}}</td>
                     <td class="text-right"></td>
                     <td class="text-right"></td>
-                    <td class="text-right">{{tttotal}}</td>
-                    <td class="text-right">{{ttdeuda}}</td>
                     
                   </tr>
                 </tfoot>
@@ -107,14 +122,19 @@
               isLoading: false,
               fullPage: true,
               tacomu:0,
-              ttacomu:0,
+              ttcancelado:0,
               tdesem:0,
               tcancelado:0,
               ttotal:0,
               tdeuda:0,
+              gcancelado:0,
+              gamorti:0,
+              gtotal:0,
               tttotal:0,
               ttdeuda:0,
-
+              tamorti:0,
+              ttamorti:0,
+              tacumo:0,
               dots:'dots',
               color:'#dc3545',
               creditos :[],
@@ -231,18 +251,18 @@
             .then(({data}) => {
               this.data = data;
               let tdesem =0;
-                 let tacumo = 0;
+                 let ttamorti = 0;
                  let tamorti = 0;
                  let tcancelado = 0;
                  let ttotal = 0;
                  let tdeuda = 0;
-                 
-                 let tttoal= 0;
+                 let ttcancelado=0;
+                 let tttotal= 0;
                  let ttdeuda = 0;
                  
                this.data.map(i=>{
                 if (i.nmes < 13) {
-                  tacomu +=  parseFloat(i.acomulado);
+                  // tacomu +=  parseFloat(i.acomulado);
                   tdesem += parseFloat(i.desem);
                 tamorti +=  parseFloat(i.amorti);
                 tcancelado +=  parseFloat(i.cancelado);
@@ -250,25 +270,28 @@
                 tdeuda +=  parseFloat(i.deuda);
                 
                 }else{
-                  ttacomu += i.acumulado;
-                  ttotal +=  i.total;
-                  ttdeuda +=  i.deuda;
+                   ttcancelado += i.cancelado;
+                  tttotal +=  i.total;
+                  ttamorti +=  i.amorti;
                   
 
                 }
                 
               })
               this.tdesem = new Intl.NumberFormat('es-MX').format(tdesem);
-              this.tacumu = new Intl.NumberFormat('es-MX').format(tacomu);
-              this.tcancelacion = new Intl.NumberFormat('es-MX').format(tcancelado);
+              // this.tacumo = new Intl.NumberFormat('es-MX').format(tacomu);
+              this.tcancelado = new Intl.NumberFormat('es-MX').format(tcancelado);
               this.tamorti = new Intl.NumberFormat('es-MX').format(tamorti);
               this.ttotal = new Intl.NumberFormat('es-MX').format(ttotal.toFixed(2))
               this.tdeuda = new Intl.NumberFormat('es-MX').format(tdeuda.toFixed(2))
               
 
-              this.ttacomu = new Intl.NumberFormat('es-MX').format(tacumo+ttacomu);
-              this.tttoal = new Intl.NumberFormat('es-MX').format(ttotal+tttoal);
-              this.ttdeuda = new Intl.NumberFormat('es-MX').format(tdeuda+ttdeuda);
+              this.ttcancelado = new Intl.NumberFormat('es-MX').format(ttcancelado);
+              this.tttotal = new Intl.NumberFormat('es-MX').format(tttotal);
+              this.ttamorti = new Intl.NumberFormat('es-MX').format(ttamorti);
+              this.gamorti = new Intl.NumberFormat('es-MX').format(ttamorti+tamorti);
+              this.gcancelado = new Intl.NumberFormat('es-MX').format(ttcancelado+tcancelado);
+              this.gtotal = new Intl.NumberFormat('es-MX').format(tttotal+ttotal);
               
 
             }).catch((err) => {

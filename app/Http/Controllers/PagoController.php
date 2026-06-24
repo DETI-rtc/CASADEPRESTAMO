@@ -35,7 +35,6 @@ class PagoController extends Controller
         $user = auth('sanctum')->user();
         $role = $user->getRoleNames();
 
-
         if ($role->first() == "Agente") {
           //  select pa.*, CONCAT(p.paterno,' ',p.materno,' ',p.nombres) as clientes from pago as pa INNER JOIN credito as c on pa.idcredito = c.id INNER JOIN persona as p on c.idpersona = p.id where c.idanalista = 6
           $pago = DB::table('pago as pa')->join('credito as c','pa.idcredito','=','c.id')->join('persona as  p','c.idpersona','=','p.id')
@@ -1276,7 +1275,7 @@ class PagoController extends Controller
         (select count(DISTINCT p.id) from pago as p INNER JOIN cronograma as c on p.idcredito=c.idcredito INNER JOIN detallecrono as d on c.id=d.idcrono where p.idcredito=cre.id and fecha_pago <= '$request->fecha'and d.situacion ='C' and nro_cuota > 0 and d.cuotanro>0 and p.adelanto is NULL) as n_cuotas_pagado,              
         (select if(sum(interes) is null, 0, sum(interes)) from pago where idcredito = cre.id and fecha_pago <= '$request->fecha' ) as interes_pagado,
         d.cuota as cuota,
-         ((c.num_cuotas - (select count(DISTINCT d.id) from pago as p INNER JOIN cronograma as c on p.idcredito=c.idcredito INNER JOIN detallecrono as d on c.id=d.idcrono where p.idcredito=cre.id and fecha_pago <= '$request->fecha'and d.situacion='C' and nro_cuota > 0 and d.cuotanro>0 and p.adelanto is NULL) )*d.cuota) as monto_res,
+        ((c.num_cuotas - (select count(DISTINCT d.id) from pago as p INNER JOIN cronograma as c on p.idcredito=c.idcredito INNER JOIN detallecrono as d on c.id=d.idcrono where p.idcredito=cre.id and fecha_pago <= '$request->fecha'and d.situacion='C' and nro_cuota > 0 and d.cuotanro>0 and p.adelanto is NULL) )*d.cuota) as monto_res,
          (SELECT count(d.id) from  cronograma c inner join detallecrono d on c.id = d.idcrono where c.idcredito =cre.id and cuotanro=0 and fecha_ven <='$request->fecha') as amor,
         (select  (c.num_cuotas - (select count(id) from pago where pago.idcredito = cre.id and pago.fecha_pago <= '$request->fecha') ) as er
             from cronograma c
@@ -1318,7 +1317,7 @@ class PagoController extends Controller
                             $i->int_res=$dato1->sum('interes');
                             $i->seg_res=$dato1->sum('seg_des');
                             $i->com_res=$dato1->sum('com_des');
-                            $i->monto_res=$dato1->sum('cuota');
+                            //$i->monto_res=$dato1->sum('cuota');
                             if (empty($sumveri)) {
                             } else {
                                 // if ($sumveri[0]->nro === null && $sumveri[0]->t_interes === null) {
@@ -1391,372 +1390,343 @@ class PagoController extends Controller
        
             
         }
+
+       // DD($data);
         return $data;
     }
     public function getReportMensualamo(Request $request){
         
         $res = [];
-        $ani =db::Select("select year(f_desembolso) as anio FROM cronograma where year(f_desembolso) < $request->anio group by anio");
+        //$ani =db::Select("select year(f_desembolso) as anio FROM cronograma where year(f_desembolso) < $request->anio group by anio");
+        $ani =  DB::select("select año as anio from periodo where año < $request->anio");
+        //DD($ani);
         for ($a=0;$a<count($ani);$a++){
             $res[$a]['mes']="SALDO - ".$ani[$a]->anio;
             $va=$ani[$a]->anio;
-            $amor = DB::select("select sum(cap_amor) as monto  from pago  where  year(fecha_pago) = $va  ");
-               if( count($amor) < 1 ){
-                $res[$a]['tot_amor'] = 0;
-               }else{
-                $res[$a]['tot_amor'] = $amor[0]->monto;
-               }
-            $cancelado = DB::Select("select sum(monto_can) as monto from credito_cancel  where year(fecha_reg) = $va");
-            // DD($cancelado);
-           if( count($cancelado) < 1 ){
-            $res[$a]['cancelado'] = 0;
+            $amor = DB::table('pago')
+                            ->whereYear('fecha_pago', $va)
+                            ->sum('cap_amor');
+            $res[$a]['amorti'] = $amor;
 
-           }else{
-            $res[$a]['cancelado'] = floatval($cancelado[0]->monto);
-            
-                                      
-           }
-           $pago = DB::select("select SUM(mon_ne_desem) as monto from cronograma  where year(f_desembolso) = $va");
-           if( count($pago) < 1 ){
-            $res[$a]['desem'] = 0;
-               $res[$a]['acumulado'] = 0;
+            $cancelado = DB::table('credito_cancel')
+            ->whereYear('fecha_reg', $va)
+            ->sum('monto_can');
+            $res[$a]['cancelado'] = floatval($cancelado);  
+          
+           $pago = DB::table('cronograma')
+           ->whereYear('f_desembolso', $va)
+           ->sum('mon_ne_desem');  
+         
+            $res[$a]['desem'] = $pago;
+            $res[$a]['total'] = $res[$a]['amorti']+ $res[$a]['cancelado'];
+            if ($a==0) {
+                $res[$a]['acumulado'] = $pago ;
+                $res[$a]['acumulado1'] = 0 ;
                
-            }else{
-                $res[$a]['desem'] = 0;
-                $res[$a]['acumulado'] = $pago[0]->monto;
-                
-               
+            }else{                         
+                $res[$a]['acumulado'] = $pago+$res[$a-1]['acumulado'] ;
+                $res[$a]['acumulado1'] = $res[$a]['total']+$res[$a-1]['acumulado1'] ;
             }
-            $res[$a]['total'] = $res[$a]['tot_amor']+ $res[$a]['cancelado'] ;
-            $res[$a]['deuda'] =  $res[$a]['acumulado']-$res[$a]['total']  ;
+           
+           
+         
+                $res[$a]['deuda'] =  $res[$a]['acumulado']-$res[$a]['acumulado1'] ;
+            
+
+            
 
         }
         $i=count($ani)-1;
+       //DD($res);
         for ($m=0; $m <= $request->mes  ; $m++) {
             if($m ==  1){
                $res[$m+$i]['mes']="Enero";
                $res[$m+$i]['nmes']=1;
-               $amor = DB::select("select sum(cap_amor) as monto, MONTH(fecha_pago) as mese  from pago  where  year(fecha_pago) = $request->anio  and  MONTH(fecha_pago) = 1 group by mese");
-              // DD($amor);
-               if( count($amor) < 1 ){
-                $res[$m+$i]['amorti'] = 0;
-               }else{
-                $res[$m+$i]['amorti'] = $amor[0]->monto;
-               }
-               $cancelado = DB::Select("select sum(monto_can) as monto ,MONTH(fecha_reg) as mese  from credito_cancel  where year(fecha_reg)  = $request->anio and  MONTH(fecha_reg) = 1 group by mese;");
-               if( count($cancelado) < 1 ){
-                $res[$m+$i]['cancelado'] = 0;
-               }else{
-                $res[$m+$i]['cancelado'] = $cancelado[0]->monto;   
-               }
-               $pago = DB::select("select SUM(mon_ne_desem) as monto,MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) = $request->anio and MONTH(f_desembolso) = 1 group by mese;");
-               if( count($pago) < 1 ){
-                $res[$m+$i]['desem'] = 0;
-                $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-               }else{
-                $res[$m+$i]['desem'] = $pago[0]->monto;
-                $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$i]['acumulado'];
-               }
-             $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$i]['total'] ;
-             $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+               $amor = DB::table('pago')
+               ->whereYear('fecha_pago', $request->anio)
+               ->whereMonth('fecha_pago', 1)
+               ->sum('cap_amor');
+               $res[$m+$i]['amorti'] = $amor;               
+               $cancelado = DB::table('credito_cancel')
+               ->whereYear('fecha_reg', $request->anio)
+               ->whereMonth('fecha_reg', 1)
+               ->sum('monto_can');
+               $res[$m+$i]['cancelado'] = $cancelado;               
+               $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 1)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
                
             }
             if($m == 2){
                 $res[$m+$i]['mes']="Febrero";
                 $res[$m+$i]['nmes']=2;
-                $amor = DB::select("select sum(cap_amor) as monto, MONTH(fecha_pago) as mese  from pago  where  year(fecha_pago) = $request->anio  and  MONTH(fecha_pago) = 2 group by mese");
-                if( count($amor) < 1 ){
-                 $res[$m+$i]['amorti'] = 0;
-                }else{
-                 $res[$m+$i]['amorti'] = $amor[0]->monto;
-                }
-                $cancelado = DB::Select("select sum(monto_can) as monto,MONTH(fecha_reg) as mese from credito_cancel  where year(fecha_reg)  = $request->anio and  MONTH(fecha_reg) = 2 group by mese");
-                if(count($cancelado) < 1){
-                   
-                 $res[$m+$i]['cancelado'] = 0;
-                }else{
-                   $res[$m+$i]['cancelado'] = $cancelado[0]->monto;
-                }
-                $pago = DB::select(" select SUM(mon_ne_desem) as monto,MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) = $request->anio and MONTH(f_desembolso) = 2 group by mese;");
-                if(count($pago) < 1){
-                    $res[$m+$i]['desem'] = 0;
-                    $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-                   }else{
-                    $res[$m+$i]['desem'] = $pago[0]->monto;
-                    $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$m+$i-1]['acumulado'];
-                   }
-                 $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$m+$i-1]['total'] ;
-                 $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+                $amor = DB::table('pago')
+                    ->whereYear('fecha_pago', $request->anio)
+                    ->whereMonth('fecha_pago', 2)
+                    ->sum('cap_amor');
+                $res[$m+$i]['amorti'] = $amor;  
+                $cancelado = DB::table('credito_cancel')
+                    ->whereYear('fecha_reg', $request->anio)
+                    ->whereMonth('fecha_reg', 2)
+                    ->sum('monto_can');
+                $res[$m+$i]['cancelado'] = $cancelado; 
+                $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 2)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
+                 
             }
             if($m== 3){
             $res[$m+$i]['mes']="Marzo";
             $res[$m+$i]['nmes']=3;
-            $amor = DB::select("select sum(cap_amor) as monto, MONTH(fecha_pago) as mese from pago  where  year(fecha_pago) = $request->anio  and  MONTH(fecha_pago) = 3 group by mese");
-            if( count($amor) < 1 ){
-             $res[$m+$i]['amorti'] = 0;
-            }else{
-             $res[$m+$i]['amorti'] = $amor[0]->monto;
-            }
-            $cancelado = DB::Select("select sum(monto_can) as monto,MONTH(fecha_reg) as mese from credito_cancel  where year(fecha_reg)  = $request->anio and  MONTH(fecha_reg) = 3 group by mese");
-            if(count($cancelado) < 1) {
-                $res[$m+$i]['cancelado'] = 0;
-            }else{
-                $res[$m+$i]['cancelado'] = $cancelado[0]->monto;
-                            
-            }
-            $pago = DB::select("select SUM(mon_ne_desem) as monto,MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) =$request->anio and MONTH(f_desembolso) = 3 group by mese;");
-            if(count($pago)<1) {
-                $res[$m+$i]['desem'] = 0;
-                $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-               }else{
-                $res[$m+$i]['desem'] = $pago[0]->monto;
-                $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$m+$i-1]['acumulado'];
-               }
-             $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$m+$i-1]['total'];
-             $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+            $amor = DB::table('pago')
+                    ->whereYear('fecha_pago', $request->anio)
+                    ->whereMonth('fecha_pago', 3)
+                    ->sum('cap_amor');
+                $res[$m+$i]['amorti'] = $amor;  
+                $cancelado = DB::table('credito_cancel')
+                    ->whereYear('fecha_reg', $request->anio)
+                    ->whereMonth('fecha_reg', 3)
+                    ->sum('monto_can');
+                $res[$m+$i]['cancelado'] = $cancelado; 
+                $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 3)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
+             
             }
             if($m  == 4){
                 $res[$m+$i]['mes']="Abril";
                 $res[$m+$i]['nmes']=4;
-                $amor = DB::select("select sum(cap_amor) as monto,MONTH(fecha_pago) as mese  from pago  where  year(fecha_pago) = $request->anio  and  MONTH(fecha_pago) = 4 group by mese");
-                if( count($amor) < 1 ){
-                 $res[$m+$i]['amorti'] = 0;
-                }else{
-                 $res[$m+$i]['amorti'] = $amor[0]->monto;
-                }
-                $cancelado = DB::Select("select sum(monto_can) as monto,MONTH(fecha_reg) as mese from credito_cancel  where year(fecha_reg)  =  $request->anio and  MONTH(fecha_reg) = 4 group by mese");
-                if(count($cancelado) < 1) {
-                    $res[$m+$i]['cancelado'] = 0;
-                }else{
-                    $res[$m+$i]['cancelado'] = $cancelado[0]->monto;
-                                
-                }
-                $pago = DB::select("select SUM(mon_ne_desem) as monto,MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) =$request->anio and MONTH(f_desembolso) = 4 group by mese;");
-                if(count($pago)<1) {
-                    $res[$m+$i]['desem'] = 0;
-                    $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-                   }else{
-                    $res[$m+$i]['desem'] = $pago[0]->monto;
-                    $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$m+$i-1]['acumulado'];
-                   }
-                 $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$m+$i-1]['total'];
-                 $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+                $amor = DB::table('pago')
+                    ->whereYear('fecha_pago', $request->anio)
+                    ->whereMonth('fecha_pago', 4)
+                    ->sum('cap_amor');
+                $res[$m+$i]['amorti'] = $amor;  
+                $cancelado = DB::table('credito_cancel')
+                    ->whereYear('fecha_reg', $request->anio)
+                    ->whereMonth('fecha_reg', 4)
+                    ->sum('monto_can');
+                $res[$m+$i]['cancelado'] = $cancelado; 
+                $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 4)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
+                
             }
             if($m == 5){
                 $res[$m+$i]['mes']="Mayo";
                 $res[$m+$i]['nmes']=5;
-                $amor = DB::select("select sum(cap_amor) as monto,MONTH(fecha_pago) as mese  from pago  where  year(fecha_pago) =  $request->anio  and  MONTH(fecha_pago) = 5 group by mese");
-                if( count($amor) < 1 ){
-                 $res[$m+$i]['amorti'] = 0;
-                }else{
-                 $res[$m+$i]['amorti'] = $amor[0]->monto;
-                }
-                $cancelado = DB::Select("select sum(monto_can) as monto,MONTH(fecha_reg) as mese from credito_cancel  where year(fecha_reg)  = $request->anio and  MONTH(fecha_reg) = 5 group by mese ");
-                if(count($cancelado) < 1) {
-                    $res[$m+$i]['cancelado'] = 0;
-                }else{
-                    $res[$m+$i]['cancelado'] = $cancelado[0]->monto;                                
-                }
-                $pago = DB::select("select SUM(mon_ne_desem) as monto,MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) = $request->anio and MONTH(f_desembolso) = 5 group by mese;");
-                if(count($pago)<1){
-                    $res[$m+$i]['desem'] = 0;
-                    $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-                   }else{
-                    $res[$m+$i]['desem'] = $pago[0]->monto;
-                    $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$m+$i-1]['acumulado'];
-                   }
-                 $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$m+$i-1]['total'];
-                 $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+                $amor = DB::table('pago')
+                    ->whereYear('fecha_pago', $request->anio)
+                    ->whereMonth('fecha_pago', 5)
+                    ->sum('cap_amor');
+                $res[$m+$i]['amorti'] = $amor;  
+                $cancelado = DB::table('credito_cancel')
+                    ->whereYear('fecha_reg', $request->anio)
+                    ->whereMonth('fecha_reg', 5)
+                    ->sum('monto_can');
+                $res[$m+$i]['cancelado'] = $cancelado; 
+                $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 5)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
+                 
             }
             if($m == 6){
                 $res[$m+$i]['mes']="Junio";
                 $res[$m+$i]['nmes']=6;
-                $amor = DB::select("select sum(cap_amor) as monto,MONTH(fecha_pago) as mese   from pago  where  year(fecha_pago) = $request->anio  and  MONTH(fecha_pago) = 6 group by mese");
-                if( count($amor) < 1 ){
-                 $res[$m+$i]['amorti'] = 0;
-                }else{
-                 $res[$m+$i]['amorti'] = $amor[0]->monto;
-                }
-                $cancelado = DB::Select("select sum(monto_can) as monto,MONTH(fecha_reg) as mese  from credito_cancel  where year(fecha_reg)  = $request->anio and  MONTH(fecha_reg) = 6 group by mese");
-                if(count($cancelado) < 1){
-                    $res[$m+$i]['cancelado'] = 0;
-                }else{
-                    $res[$m+$i]['cancelado'] = $cancelado[0]->monto;
-                                
-                }
-                $pago = DB::select("select SUM(mon_ne_desem) as monto, MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) = $request->anio and MONTH(f_desembolso) = 6 group by mese;");
-                if(count($pago)<1) {
-                    $res[$m+$i]['desem'] = 0;
-                    $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-                   }else{
-                    $res[$m+$i]['desem'] = $pago[0]->monto;
-                    $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$m+$i-1]['acumulado'];
-                   }
-                 $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$m+$i-1]['total'];
-                 $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+                $amor = DB::table('pago')
+                    ->whereYear('fecha_pago', $request->anio)
+                    ->whereMonth('fecha_pago', 6)
+                    ->sum('cap_amor');
+                $res[$m+$i]['amorti'] = $amor;  
+                $cancelado = DB::table('credito_cancel')
+                    ->whereYear('fecha_reg', $request->anio)
+                    ->whereMonth('fecha_reg', 6)
+                    ->sum('monto_can');
+                $res[$m+$i]['cancelado'] = $cancelado; 
+                $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 6)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
+                
             }
             if($m == 7){
                 $res[$m+$i]['mes']="Julio";
                 $res[$m+$i]['nmes']=7;
-                $amor = DB::select("select sum(cap_amor) as monto,MONTH(fecha_pago) as mese   from pago  where  year(fecha_pago) = $request->anio  and  MONTH(fecha_pago) = 7 group by mese");
-                if( count($amor) < 1 ){
-                 $res[$m+$i]['amorti'] = 0;
-                }else{
-                 $res[$m+$i]['amorti'] = $amor[0]->monto;
-                }
-                $cancelado = DB::Select("select sum(monto_can) as monto,MONTH(fecha_reg) as mese  from credito_cancel  where year(fecha_reg)  = $request->anio and  MONTH(fecha_reg) = 7 group by mese");
-                // (count($cancelado) < 1);
-                if(count($cancelado) < 1){
-                    $res[$m+$i]['cancelado'] = 0;
-                }else{
-                    $res[$m+$i]['cancelado'] = $cancelado[0]->monto;
-                                
-                }
-                $pago = DB::select("select SUM(mon_ne_desem) as monto, MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) = $request->anio and MONTH(f_desembolso) = 7 group by mese;");
-                if(count($pago)<1) {
-                    $res[$m+$i]['desem'] = 0;
-                    $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-                   }else{
-                    $res[$m+$i]['desem'] = $pago[0]->monto;
-                    $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$m+$i-1]['acumulado'];
-                   }
-                 $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$m+$i-1]['total'];
-                 $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+                $amor = DB::table('pago')
+                    ->whereYear('fecha_pago', $request->anio)
+                    ->whereMonth('fecha_pago', 7)
+                    ->sum('cap_amor');
+                $res[$m+$i]['amorti'] = $amor;  
+                $cancelado = DB::table('credito_cancel')
+                    ->whereYear('fecha_reg', $request->anio)
+                    ->whereMonth('fecha_reg', 7)
+                    ->sum('monto_can');
+                $res[$m+$i]['cancelado'] = $cancelado; 
+                $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 7)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
+                 
             }
             if($m == 8){
                 $res[$m+$i]['mes']="Agosto";
                 $res[$m+$i]['nmes']=8;
-                $amor = DB::select("select sum(cap_amor) as monto, MONTH(fecha_pago) as mese from pago  where  year(fecha_pago) = $request->anio  and  MONTH(fecha_pago) = 8 group by mese");
-                if( count($amor) < 1 ){
-                 $res[$m+$i]['amorti'] = 0;
-                }else{
-                 $res[$m+$i]['amorti'] = $amor[0]->monto;
-                }
-                $cancelado = DB::Select("select sum(monto_can) as monto, MONTH(fecha_reg) as mese from credito_cancel  where year(fecha_reg) = $request->anio and  MONTH(fecha_reg) = 8 group by mese");
-                if(count($cancelado) < 1){
-                    $res[$m+$i]['cancelado'] = 0;
-                }else{
-                    $res[$m+$i]['cancelado'] = $cancelado[0]->monto;
-                                
-                }
-                $pago = DB::select("select SUM(mon_ne_desem) as monto,MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) = $request->anio and MONTH(f_desembolso) = 8 group by mese;");
-                if(count($pago)<1){
-                    $res[$m+$i]['desem'] = 0;
-                    $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-                   }else{
-                    $res[$m+$i]['desem'] = $pago[0]->monto;
-                    $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$m+$i-1]['acumulado'];
-                   }
-                 $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$m+$i-1]['total'];
-                 $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+                $amor = DB::table('pago')
+                    ->whereYear('fecha_pago', $request->anio)
+                    ->whereMonth('fecha_pago', 8)
+                    ->sum('cap_amor');
+                $res[$m+$i]['amorti'] = $amor;  
+                $cancelado = DB::table('credito_cancel')
+                    ->whereYear('fecha_reg', $request->anio)
+                    ->whereMonth('fecha_reg', 8)
+                    ->sum('monto_can');
+                $res[$m+$i]['cancelado'] = $cancelado; 
+                $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 8)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
+                 
             }
             if($m == 9){
                 $res[$m+$i]['mes']="Setiembre";
                 $res[$m+$i]['nmes']=9;
-                $amor = DB::select("select sum(cap_amor) as monto, MONTH(fecha_pago) as mese  from pago  where  year(fecha_pago) = $request->anio  and  MONTH(fecha_pago) = 9 group by mese");
-                if( count($amor) < 1 ){
-                 $res[$m+$i]['amorti'] = 0;
-                }else{
-                 $res[$m+$i]['amorti'] = $amor[0]->monto;
-                }
-                $cancelado = DB::Select("select sum(monto_can) as monto,MONTH(fecha_reg) as mese  from credito_cancel  where year(fecha_reg)  = $request->anio and  MONTH(fecha_reg) = 9 group by mese");
-                if(count($cancelado) < 1){
-                    $res[$m+$i]['cancelado'] = 0;
-                }else{
-                    $res[$m+$i]['cancelado'] = $cancelado[0]->monto;      
-                }
-                $pago = DB::select("select SUM(mon_ne_desem) as monto,MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) = $request->anio and MONTH(f_desembolso) = 9 group by mese;");
-                // DD($pago);
-                if(count($pago) < 1 ){
-                    $res[$m+$i]['desem'] = 0;
-                    $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-                   }else{
-                    $res[$m+$i]['desem'] = $pago[0]->monto;
-                    $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$m+$i-1]['acumulado'];
-                   }
-                 $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$m+$i-1]['total'];
-                 $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+                $amor = DB::table('pago')
+                    ->whereYear('fecha_pago', $request->anio)
+                    ->whereMonth('fecha_pago', 9)
+                    ->sum('cap_amor');
+                $res[$m+$i]['amorti'] = $amor;  
+                $cancelado = DB::table('credito_cancel')
+                    ->whereYear('fecha_reg', $request->anio)
+                    ->whereMonth('fecha_reg', 9)
+                    ->sum('monto_can');
+                $res[$m+$i]['cancelado'] = $cancelado; 
+                $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 9)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
+                
             }
             if($m == 10){
                 $res[$m+$i]['mes']="Octubre";
                 $res[$m+$i]['nmes']=10;
-                $amor = DB::select("select sum(cap_amor) as monto, MONTH(fecha_pago) as mese   from pago  where  year(fecha_pago) = $request->anio  and  MONTH(fecha_pago) = 10 group by mese");
-                if( count($amor) < 1 ){
-                 $res[$m+$i]['amorti'] = 0;
-                }else{
-                 $res[$m+$i]['amorti'] = $amor[0]->monto;
-                }
-                $cancelado = DB::Select("select sum(monto_can) as monto,MONTH(fecha_reg) as mese   from credito_cancel  where year(fecha_reg) = $request->anio and  MONTH(fecha_reg) = 10 group by mese");
-                if(count($cancelado) < 1){
-                    $res[$m+$i]['cancelado'] = 0;
-                }else{
-                    $res[$m+$i]['cancelado'] = $cancelado[0]->monto;
-                                
-                }
-                $pago = DB::select("select SUM(mon_ne_desem) as monto,MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) =$request->anio and MONTH(f_desembolso) = 10 group by mese;");
-                if(count($pago) < 1 ){
-                    $res[$m+$i]['desem'] = 0;
-                    $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-                   }else{
-                    $res[$m+$i]['desem'] = $pago[0]->monto;
-                    $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$m+$i-1]['acumulado'];
-                   }
-                 $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$m+$i-1]['total'];
-                 $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+                $amor = DB::table('pago')
+                    ->whereYear('fecha_pago', $request->anio)
+                    ->whereMonth('fecha_pago', 10)
+                    ->sum('cap_amor');
+                $res[$m+$i]['amorti'] = $amor;  
+                $cancelado = DB::table('credito_cancel')
+                    ->whereYear('fecha_reg', $request->anio)
+                    ->whereMonth('fecha_reg', 10)
+                    ->sum('monto_can');
+                $res[$m+$i]['cancelado'] = $cancelado; 
+                $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 10)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
+                 
             }
             if($m == 11){
                 $res[$m+$i]['mes']="Noviembre";
                 $res[$m+$i]['nmes']=11;
-                $amor = DB::select("select sum(cap_amor) as monto, MONTH(fecha_pago) as mese    from pago  where  year(fecha_pago) = $request->anio  and  MONTH(fecha_pago) = 11 group by mese");
-                if( count($amor) < 1 ){
-                 $res[$m+$i]['amorti'] = 0;
-                }else{
-                 $res[$m+$i]['amorti'] = $amor[0]->monto;
-                }
-                $cancelado = DB::Select("select sum(monto_can) as monto,MONTH(fecha_reg) as mese from credito_cancel  where year(fecha_reg) =$request->anio and  MONTH(fecha_reg) = 11 group by mese");
-                if(count($cancelado) < 1 ){
-                    $res[$m+$i]['cancelado'] = 0;
-                }else{
-                    $res[$m+$i]['cancelado'] = $cancelado[0]->monto;
-                                
-                }
-                $pago = DB::select("select SUM(mon_ne_desem) as monto,MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) = $request->anio and MONTH(f_desembolso) = 11 group by mese;");
-                if(count($pago) < 1){
-                    $res[$m+$i]['desem'] = 0;
-                    $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-                   }else{
-                    $res[$m+$i]['desem'] = $pago[0]->monto;
-                    $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$m+$i-1]['acumulado'];
-                   }
-                 $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$m+$i-1]['total'];
-                 $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+                $amor = DB::table('pago')
+                    ->whereYear('fecha_pago', $request->anio)
+                    ->whereMonth('fecha_pago', 11)
+                    ->sum('cap_amor');
+                $res[$m+$i]['amorti'] = $amor;  
+                $cancelado = DB::table('credito_cancel')
+                    ->whereYear('fecha_reg', $request->anio)
+                    ->whereMonth('fecha_reg', 11)
+                    ->sum('monto_can');
+                $res[$m+$i]['cancelado'] = $cancelado; 
+                $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 11)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
+                 
             }
             if($m == 12){
                 $res[$m+$i]['mes']="Diciembre";
                 $res[$m+$i]['nmes']=12;
-                $amor = DB::select("select sum(cap_amor) as monto,MONTH(fecha_pago) as mese  from pago  where  year(fecha_pago) = $request->anio  and  MONTH(fecha_pago) = 12 group by mese");
-                if( count($amor) < 1 ){
-                 $res[$m+$i]['amorti'] = 0;
-                }else{
-                 $res[$m+$i]['amorti'] = $amor[0]->monto;
-                }
-                $cancelado = DB::Select("select sum(monto_can) as monto,MONTH(fecha_reg) as mese from credito_cancel  where year(fecha_reg) = $request->anio and  MONTH(fecha_reg) = 12 group by mese");
-                if(count($cancelado) < 1 ){
-                    $res[$m+$i]['cancelado'] = 0;
-                }else{
-                    $res[$m+$i]['cancelado'] = $cancelado[0]->monto;
-                                
-                }
-                $pago = DB::select("select SUM(mon_ne_desem) as monto,MONTH(f_desembolso) as mese from cronograma  where year(f_desembolso) = $request->anio and MONTH(f_desembolso) = 12 group by mese;");
-                if(count($pago) < 1 ){
-                    $res[$m+$i]['desem'] = 0;
-                    $res[$m+$i]['acumulado'] = 0+$res[$i]['acumulado'];
-                   }else{
-                    $res[$m+$i]['desem'] = $pago[0]->monto;
-                    $res[$m+$i]['acumulado'] = $pago[0]->monto+$res[$m+$i-1]['acumulado'];
-                   }
-                 $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado']+$res[$m+$i-1]['total'];
-                 $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['total'];
+                $amor = DB::table('pago')
+                    ->whereYear('fecha_pago', $request->anio)
+                    ->whereMonth('fecha_pago', 12)
+                    ->sum('cap_amor');
+                $res[$m+$i]['amorti'] = $amor;  
+                $cancelado = DB::table('credito_cancel')
+                    ->whereYear('fecha_reg', $request->anio)
+                    ->whereMonth('fecha_reg', 12)
+                    ->sum('monto_can');
+                $res[$m+$i]['cancelado'] = $cancelado; 
+                $pago = DB::table('cronograma')
+                            ->whereYear('f_desembolso', $request->anio)
+                            ->whereMonth('f_desembolso', 12)
+                            ->sum('mon_ne_desem');
+                $res[$m+$i]['desem'] = $pago;
+                $res[$m+$i]['acumulado'] = $pago+$res[$i]['acumulado'];
+                $res[$m+$i]['total'] =  $res[$m+$i]['amorti']+$res[$m+$i]['cancelado'] ;
+                $res[$m+$i]['acumulado1'] = $res[$m+$i]['total']+$res[count($res)-2]['acumulado1'] ;
+                $res[$m+$i]['deuda'] =  $res[$m+$i]['acumulado']-$res[$m+$i]['acumulado1'];
+                 
             }
             
         }

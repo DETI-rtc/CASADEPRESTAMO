@@ -126,8 +126,16 @@
                         <td class="tds" >{{com.cliente}}</td>
                         <td class="tds text-right" >{{parseFloat(com.op_gravadas) | moneda}}</td>
                         <td class="tds text-right" >{{parseFloat(com.igv) | moneda}}</td>
-                        <td class="tds text-right" >{{parseFloat(com.total) | moneda}}</td>
+                        <template v-if="com.tipo_comprobante_id == '07'">
                         <td class="tds text-right" ></td>
+                        <td class="tds text-right" >{{parseFloat(com.total) | moneda}}</td>
+                        </template>
+                        <template v-else>
+                            <td class="tds text-right" >{{parseFloat(com.total) | moneda}}</td>
+                        <td class="tds text-right" ></td>
+                            
+                        </template>
+                        
                         <!-- <template v-if="com.tipo_comprobante_id != '07'">
                             <td v-if="com.forma_pago == 'Credito'" class="tds text-right"></td>
                             <td v-if="com.forma_pago == 'Credito'" class="tds text-right">{{com.total | moneda}}</td>

@@ -31,7 +31,10 @@
             <div class="card-body p-3">
                 <v-client-table :data="comprobantes" :columns="columna" :options="options">
                     <div slot="estado_comprobante" slot-scope="{row}">
-                        <span class="badge badge-success" v-if="row.codigo_sunat == '0'">
+                     <span class="badge badge-danger" v-if="row.estado_comprobante == '0'">
+                            Anulado
+                        </span>
+                        <span class="badge badge-success" v-else-if="row.codigo_sunat == '0'">
                             Aceptado
                         </span>
                         <span class="badge badge-danger" v-else>
